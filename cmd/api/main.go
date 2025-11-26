@@ -26,3 +26,5 @@ func main() {
 	log.Println("Server running on port", cfg.Port)
 	r.Run(":" + cfg.Port)
 }
+
+//update main file
