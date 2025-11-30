@@ -7,6 +7,7 @@ import (
 	"mini-ecommerce/internal/order"
 	"mini-ecommerce/internal/product"
 	"mini-ecommerce/internal/user"
+	"mini-ecommerce/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,10 +42,14 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		productRoutes.GET("", productHandler.GetAllProducts)
 		productRoutes.GET("/:id", productHandler.GetProductByID)
 
-		// Admin routes (would need auth middleware in production)
-		productRoutes.POST("", productHandler.CreateProduct)
-		productRoutes.PUT("/:id", productHandler.UpdateProduct)
-		productRoutes.DELETE("/:id", productHandler.DeleteProduct)
+		// Admin routes (protected)
+		adminProduct := productRoutes.Group("")
+		adminProduct.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
+		{
+			adminProduct.POST("", productHandler.CreateProduct)
+			adminProduct.PUT("/:id", productHandler.UpdateProduct)
+			adminProduct.DELETE("/:id", productHandler.DeleteProduct)
+		}
 	}
 
 	// Admin routes
@@ -52,10 +57,16 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	{
 		adminRoutes.POST("/register", adminHandler.Register)
 		adminRoutes.POST("/login", adminHandler.Login)
-		adminRoutes.GET("", adminHandler.GetAllAdmins)
-		adminRoutes.GET("/:id", adminHandler.GetAdminByID)
-		adminRoutes.PUT("/:id", adminHandler.UpdateAdmin)
-		adminRoutes.DELETE("/:id", adminHandler.DeleteAdmin)
+
+		// Protected admin routes
+		protectedAdmin := adminRoutes.Group("")
+		protectedAdmin.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
+		{
+			protectedAdmin.GET("", adminHandler.GetAllAdmins)
+			protectedAdmin.GET("/:id", adminHandler.GetAdminByID)
+			protectedAdmin.PUT("/:id", adminHandler.UpdateAdmin)
+			protectedAdmin.DELETE("/:id", adminHandler.DeleteAdmin)
+		}
 	}
 
 	// User routes
@@ -63,24 +74,44 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	{
 		userRoutes.POST("/register", userHandler.Register)
 		userRoutes.POST("/login", userHandler.Login)
-		userRoutes.GET("/profile/:id", userHandler.GetProfile)
-		userRoutes.PUT("/profile/:id", userHandler.UpdateProfile)
-		userRoutes.GET("", userHandler.GetAllUsers)
-		userRoutes.DELETE("/:id", userHandler.DeleteUser)
+
+		// Protected user routes
+		protectedUser := userRoutes.Group("")
+		protectedUser.Use(middleware.AuthMiddleware(), middleware.UserMiddleware())
+		{
+			protectedUser.GET("/profile/:id", userHandler.GetProfile)
+			protectedUser.PUT("/profile/:id", userHandler.UpdateProfile)
+		}
+
+		// Admin only
+		adminUser := userRoutes.Group("")
+		adminUser.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
+		{
+			adminUser.GET("", userHandler.GetAllUsers)
+			adminUser.DELETE("/:id", userHandler.DeleteUser)
+		}
 	}
 
 	// Order routes
 	orderRoutes := r.Group("/api/v1/orders")
 	{
-		// User can create and view their orders
-		orderRoutes.POST("", orderHandler.CreateOrder)
-		orderRoutes.GET("/user/:user_id", orderHandler.GetUserOrders)
-		orderRoutes.GET("/:id", orderHandler.GetOrderByID)
-		orderRoutes.DELETE("/:id", orderHandler.CancelOrder)
+		// Protected order routes
+		protectedOrder := orderRoutes.Group("")
+		protectedOrder.Use(middleware.AuthMiddleware())
+		{
+			protectedOrder.POST("", orderHandler.CreateOrder)
+			protectedOrder.GET("/user/:user_id", orderHandler.GetUserOrders)
+			protectedOrder.GET("/:id", orderHandler.GetOrderByID)
+			protectedOrder.DELETE("/:id", orderHandler.CancelOrder)
 
-		// Admin only
-		orderRoutes.GET("", orderHandler.GetAllOrders)
-		orderRoutes.PUT("/:id/status", orderHandler.UpdateOrderStatus)
+			// Admin only
+			adminOrder := orderRoutes.Group("")
+			adminOrder.Use(middleware.AdminMiddleware())
+			{
+				adminOrder.GET("", orderHandler.GetAllOrders)
+				adminOrder.PUT("/:id/status", orderHandler.UpdateOrderStatus)
+			}
+		}
 	}
 
 	// Health check

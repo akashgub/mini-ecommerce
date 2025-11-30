@@ -1,6 +1,6 @@
 # Mini E-Commerce Platform
 
-A simple e-commerce API built with Go, Gin, and PostgreSQL where customers can browse products and admins can manage inventory.
+A simple e-commerce API built with Go, Gin, and PostgreSQL where customers can browse products and admins can manage inventory
 
 ## Features
 
@@ -14,7 +14,9 @@ A simple e-commerce API built with Go, Gin, and PostgreSQL where customers can b
 
 ```
 .
-├── main.go                      # Application entry point
+├── cmd/
+│   └── api/
+│       └── main.go              # Application entry point
 ├── config/
 │   └── config.go                # Configuration management
 ├── db/
@@ -81,7 +83,7 @@ go mod download
 ### 5. Run the Server
 
 ```bash
-go run main.go
+go run ./cmd/api/main.go
 ```
 
 The server will start on `http://localhost:8080`

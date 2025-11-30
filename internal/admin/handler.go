@@ -30,7 +30,16 @@ func (h *AdminHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, admin)
+	// Return only safe fields (no password hash)
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Admin registered successfully",
+		"admin": gin.H{
+			"id":       admin.ID,
+			"username": admin.Username,
+			"email":    admin.Email,
+			"role":     admin.Role,
+		},
+	})
 }
 
 // Login authenticates an admin
@@ -42,13 +51,17 @@ func (h *AdminHandler) Login(c *gin.Context) {
 		return
 	}
 
-	admin, err := h.service.Login(req)
+	result, err := h.service.Login(req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "admin": admin})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token":   result["token"],
+		"admin":   result["admin"],
+	})
 }
 
 // GetAdminByID retrieves an admin by ID
@@ -65,7 +78,7 @@ func (h *AdminHandler) GetAdminByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, admin)
+	c.JSON(http.StatusOK, admin.ToResponse())
 }
 
 // GetAllAdmins retrieves all admins
@@ -76,7 +89,13 @@ func (h *AdminHandler) GetAllAdmins(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, admins)
+	// Convert to response format (without passwords)
+	var responses []*AdminResponse
+	for _, admin := range admins {
+		responses = append(responses, admin.ToResponse())
+	}
+
+	c.JSON(http.StatusOK, responses)
 }
 
 // UpdateAdmin updates an admin
@@ -99,7 +118,10 @@ func (h *AdminHandler) UpdateAdmin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, updatedAdmin)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Admin updated successfully",
+		"admin":   updatedAdmin.ToResponse(),
+	})
 }
 
 // DeleteAdmin deletes an admin

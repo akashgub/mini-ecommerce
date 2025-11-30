@@ -13,6 +13,15 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// UserResponse - safe response without password hash
+type UserResponse struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Phone   string `json:"phone"`
+	Address string `json:"address"`
+}
+
 type UserRegisterRequest struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
@@ -30,6 +39,17 @@ type UserUpdateRequest struct {
 	Name    string `json:"name"`
 	Phone   string `json:"phone"`
 	Address string `json:"address"`
+}
+
+// ToResponse converts User to UserResponse (removes password)
+func (u *User) ToResponse() *UserResponse {
+	return &UserResponse{
+		ID:      u.ID,
+		Name:    u.Name,
+		Email:   u.Email,
+		Phone:   u.Phone,
+		Address: u.Address,
+	}
 }
 
 type UserProfileResponse struct {

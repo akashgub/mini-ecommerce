@@ -30,7 +30,17 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	// Return only safe fields (no password hash)
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User registered successfully",
+		"user": gin.H{
+			"id":      user.ID,
+			"name":    user.Name,
+			"email":   user.Email,
+			"phone":   user.Phone,
+			"address": user.Address,
+		},
+	})
 }
 
 // Login authenticates a user
@@ -42,13 +52,17 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.Login(req)
+	result, err := h.service.Login(req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "user": user})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token":   result["token"],
+		"user":    result["user"],
+	})
 }
 
 // GetProfile retrieves user profile
@@ -97,7 +111,10 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Profile updated successfully",
+		"user":    user.ToResponse(),
+	})
 }
 
 // GetAllUsers retrieves all users (admin only)
@@ -108,7 +125,13 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, users)
+	// Convert to response format (without passwords)
+	var responses []*UserResponse
+	for _, user := range users {
+		responses = append(responses, user.ToResponse())
+	}
+
+	c.JSON(http.StatusOK, responses)
 }
 
 // DeleteUser deletes a user (admin only)

@@ -3,21 +3,21 @@ package order
 import "time"
 
 type Order struct {
-	ID        int       `json:"id" gorm:"primaryKey"`
-	UserID    int       `json:"user_id"`
-	ProductID int       `json:"product_id"`
-	Quantity  int       `json:"quantity"`
-	TotalPrice float64  `json:"total_price"`
-	Status    string    `json:"status"` // pending, confirmed, delivered
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         int       `json:"order_id" gorm:"primaryKey"`
+	UserID     int       `json:"user_id"`
+	ProductID  int       `json:"product_id"`
+	Quantity   int       `json:"quantity"`
+	TotalPrice float64   `json:"total_price"`
+	Status     string    `json:"status"` // pending, confirmed, delivered
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type OrderItem struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
+	ID       int     `json:"id"`
+	Name     string  `json:"name"`
 	Price    float64 `json:"price"`
-	Quantity int    `json:"quantity"`
+	Quantity int     `json:"quantity"`
 	Total    float64 `json:"total"`
 }
 

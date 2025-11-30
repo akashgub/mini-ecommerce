@@ -2,11 +2,12 @@ package user
 
 import (
 	"errors"
+	"mini-ecommerce/pkg/middleware"
 )
 
 type UserService interface {
 	Register(req UserRegisterRequest) (*User, error)
-	Login(req UserLoginRequest) (*User, error)
+	Login(req UserLoginRequest) (map[string]interface{}, error)
 	GetUserByID(id int) (*User, error)
 	UpdateUser(id int, req UserUpdateRequest) (*User, error)
 	DeleteUser(id int) error
@@ -43,18 +44,31 @@ func (s *userService) Register(req UserRegisterRequest) (*User, error) {
 	return user, nil
 }
 
-func (s *userService) Login(req UserLoginRequest) (*User, error) {
+func (s *userService) Login(req UserLoginRequest) (map[string]interface{}, error) {
 	user, err := s.repo.FindByEmail(req.Email)
 	if err != nil {
 		return nil, errors.New("user not found")
 	}
 
-	// In production, use bcrypt to compare passwords
-	if user.Password != req.Password {
+	// Verify password using bcrypt
+	if !middleware.VerifyPassword(user.Password, req.Password) {
 		return nil, errors.New("invalid password")
 	}
 
-	return user, nil
+	// Generate JWT token
+	token, err := middleware.GenerateToken(user.ID, user.Email, user.Name, "user", "user")
+	if err != nil {
+		return nil, errors.New("failed to generate token")
+	}
+
+	return map[string]interface{}{
+		"token": token,
+		"user": map[string]interface{}{
+			"id":    user.ID,
+			"name":  user.Name,
+			"email": user.Email,
+		},
+	}, nil
 }
 
 func (s *userService) GetUserByID(id int) (*User, error) {
